@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Form</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <div class="container">
+        <h2>Webcam Form</h2>
+        <form id="userForm">
+            <input type="text" id="name" placeholder="Enter Name" required><br>
+            <input type="email" id="email" placeholder="Enter Email" required><br>
+
+            <video id="video" autoplay></video>
+            <button type="button" id="capture">Capture</button>
+            <canvas id="canvas"></canvas>
+
+            <button type="submit">Submit</button>
+        </form>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const captureButton = document.getElementById("capture");
+        const form = document.getElementById("userForm");
+        const message = document.getElementById("message");
+
+        // Access webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                video.srcObject = stream;
+            })
+            .catch((err) => console.error("Error accessing webcam:", err));
+
+        // Capture image
+        captureButton.addEventListener("click", () => {
+            const context = canvas.getContext("2d");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        });
+
+        // Submit form
+        // Submit form
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+
+            if (!name || !email) {
+                message.innerText = "Please enter name and email!";
+                return;
+            }
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    message.innerText = "Error capturing image.";
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("name", name);
+                formData.append("email", email);
+                formData.append("image", blob, "webcam.jpg");
+
+                try {
+                    const response = await fetch("http://localhost:3000/upload", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (result.imageUrl) {
+
+                        alert("submission succesful")
+                        window.location.href = "hero.html"; // Redirect to hero.html
+
+                    } else {
+                        message.innerText = "Error uploading data.";
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                    message.innerText = "Failed to submit data.";
+                }
+            }, "image/jpeg");
+        });
+
+
+
+
+
+    </script>
+</body>
+
+</html>

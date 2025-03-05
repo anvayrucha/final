@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Webcam Form</title>
     <link rel="stylesheet" href="index.css">
 </head>
@@ -15,7 +15,7 @@
             <input type="text" id="name" placeholder="Enter Name" required><br>
             <input type="email" id="email" placeholder="Enter Email" required><br>
 
-            <video id="video" autoplay></video>
+            <video id="video" autoplay playsinline></video>
             <button type="button" id="capture">Capture</button>
             <canvas id="canvas"></canvas>
 
@@ -31,22 +31,32 @@
         const form = document.getElementById("userForm");
         const message = document.getElementById("message");
 
-        // Access webcam
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then((stream) => {
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "user" // "environment" for rear camera 
+                    }
+                });
                 video.srcObject = stream;
-            })
-            .catch((err) => console.error("Error accessing webcam:", err));
+            } catch (err) {
+                console.error("Error accessing webcam:", err);
+                message.innerText = "Camera access denied!";
+            }
+        }
 
-        // Capture image
+        // Ensure user interaction before starting the camera on iOS
+        document.addEventListener("DOMContentLoaded", () => {
+            video.addEventListener("click", startCamera);
+        });
+
         captureButton.addEventListener("click", () => {
             const context = canvas.getContext("2d");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth || 640; // Default width
+            canvas.height = video.videoHeight || 480; // Default height
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
         });
 
-        // Submit form
         // Submit form
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -78,10 +88,8 @@
 
                     const result = await response.json();
                     if (result.imageUrl) {
-
-                        alert("submission succesful")
-                        window.location.href = "hero.html"; // Redirect to hero.html
-
+                        alert("Submission successful");
+                        window.location.href = "hero.html";
                     } else {
                         message.innerText = "Error uploading data.";
                     }
@@ -92,10 +100,8 @@
             }, "image/jpeg");
         });
 
-
-
-
-
+        // Start the camera after user interaction on mobile devices
+        document.body.addEventListener("click", startCamera, { once: true });
     </script>
 </body>
 
